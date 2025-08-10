@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 
 class SkinDiseaseClassifier {
   static const String API_URL = 'https://serverless.roboflow.com/skin-disease-detection-phsnp/2';
-  static const String API_KEY = 'rf_RP9otLrOKwgp50zI9XiM06vrkLH2';
+  static const String API_KEY = 'BZYItqL3LfOPip82PUIy';
 
   Future<Map<String, dynamic>> classifyImage(File imageFile) async {
     try {

@@ -229,7 +229,7 @@ class _PhotoDisplayScreenState extends State<PhotoDisplayScreen>
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header, main/alternative result UI...
@@ -257,7 +257,7 @@ class _PhotoDisplayScreenState extends State<PhotoDisplayScreen>
             ],
           ),
         ),
-        child: SafeArea(
+        child: const SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -1,11 +1,12 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
-  final Function(String name, String email) onLoginSuccess;
-  const AuthScreen({super.key, required this.onLoginSuccess});
+  const AuthScreen({super.key, required Null Function(String name, String email) onLoginSuccess});
+
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  State createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
@@ -15,6 +16,16 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   bool _isPasswordVisible = false;
+  late final WebViewController _webViewController;
+
+  @override
+  void initState() {
+    super.initState();
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse(
+          'https://my.spline.design/claritystream-EFQ9z7Gq3kkafPoJ18iuBJ2Q/'));
+  }
 
   void _toggleMode() {
     setState(() => _isLogin = !_isLogin);
@@ -22,216 +33,154 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      Future.delayed(const Duration(seconds: 1), () {
-        final name = _isLogin ? "" : _nameController.text.trim();
-        final email = _emailController.text.trim();
-        widget.onLoginSuccess(name, email);
-      });
+      final name = _isLogin
+          ? _emailController.text.split('@')[0]
+          : _nameController.text.trim();
+      final email = _emailController.text.trim();
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(
+            userName: name,
+            userEmail: email,
+          ),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    const accentPurple = Color(0xFFAC3AD0);
+    const buttonColor = Color(0xFF971DCB);
+
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Animated/gradient background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF231942), Color(0xFF2e294e), Colors.black],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          // Glowing purple lines behind the form
           Positioned.fill(
-            child: CustomPaint(
-              painter: PurpleLinesPainter(),
+            child: IgnorePointer(
+              child: WebViewWidget(controller: _webViewController),
             ),
           ),
-          Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                child: Container(
-                  width: 400,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: Colors.blueAccent.withOpacity(0.25),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ShaderMask(
-                          shaderCallback: (Rect bounds) => LinearGradient(
-                            colors: [Colors.purpleAccent, Colors.blueAccent, Colors.white],
-                          ).createShader(bounds),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 34),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      Image.asset('assets/logoo.png', height: 38),
+                      const SizedBox(height: 26),
+                      Text(
+                        _isLogin ? 'Login' : 'Create Account',
+                        style: const TextStyle(
+                            fontSize: 32,
+                            color: accentPurple,
+                            fontWeight: FontWeight.w300),
+                      ),
+                      const SizedBox(height: 22),
+                      if (!_isLogin)
+                        _AuthField(
+                          controller: _nameController,
+                          hintText: 'Full Name',
+                          validator: (val) => val == null || val.isEmpty
+                              ? 'Please enter your full name'
+                              : null,
+                        ),
+                      const SizedBox(height: 13),
+                      _AuthField(
+                        controller: _emailController,
+                        hintText: 'Email',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!val.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 13),
+                      _AuthField(
+                        controller: _passwordController,
+                        hintText: 'Password',
+                        obscureText: !_isPasswordVisible,
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() =>
+                              _isPasswordVisible = !_isPasswordVisible),
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          if (val.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _handleSubmit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: buttonColor.withOpacity(0.81),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            _isLogin ? 'Login' : 'Create Account',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18),
+                          ),
+                        ),
+                      ),
+                      if (_isLogin)
+                        TextButton(
+                          onPressed: () {},
                           child: const Text(
-                            'MeDetect',
+                            'Forgot password?',
                             style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                                color: Colors.white70,
+                                decoration: TextDecoration.underline),
+                          ),
+                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _isLogin
+                                ? "Don't have an account? "
+                                : "Already have an account? ",
+                            style: TextStyle(
+                                color: Colors.white.withOpacity(0.7)),
+                          ),
+                          TextButton(
+                            onPressed: _toggleMode,
+                            child: Text(
+                              _isLogin ? "Sign Up" : "Sign In",
+                              style: const TextStyle(
+                                  decoration: TextDecoration.underline),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _isLogin ? 'Welcome Back' : 'Create Account',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _isLogin
-                              ? 'Sign in to continue your journey'
-                              : 'Join us to start your medical detection journey',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        if (!_isLogin)
-                          _FrostedInput(
-                            controller: _nameController,
-                            hintText: 'Full Name',
-                            prefixIcon: Icons.person_outline,
-                            validator: (val) => val == null || val.isEmpty
-                                ? 'Please enter your full name'
-                                : null,
-                          ),
-                        if (!_isLogin) const SizedBox(height: 12),
-                        _FrostedInput(
-                          controller: _emailController,
-                          hintText: 'Email Address',
-                          prefixIcon: Icons.email_outlined,
-                          validator: (val) {
-                            if (val == null || val.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!val.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _FrostedInput(
-                          controller: _passwordController,
-                          hintText: 'Password',
-                          prefixIcon: Icons.lock_outline,
-                          obscureText: !_isPasswordVisible,
-                          suffix: IconButton(
-                            icon: Icon(
-                              _isPasswordVisible
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey[400],
-                            ),
-                            onPressed: () => setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            }),
-                          ),
-                          validator: (val) {
-                            if (val == null || val.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (val.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 28),
-                        // Gradient Button with Ink and transparent button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xff8f5fff),
-                                  Color(0xff765af7),
-                                  Color(0xff1ec7fd),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.purpleAccent.withOpacity(0.18),
-                                  blurRadius: 12,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              onPressed: _handleSubmit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: Text(
-                                _isLogin ? "Sign In" : "Create Account",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 17,
-                                  letterSpacing: 1,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _isLogin
-                                  ? "Don't have an account? "
-                                  : "Already have an account? ",
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 14,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _toggleMode,
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.purpleAccent,
-                              ),
-                              child: Text(
-                                _isLogin ? "Sign Up" : "Sign In",
-                                style: const TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                            )
-                          ],
-                        )
-                      ],
-                    ),
+                        ],
+                      )
+                    ],
                   ),
                 ),
               ),
@@ -241,103 +190,40 @@ class _AuthScreenState extends State<AuthScreen> {
       ),
     );
   }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _nameController.dispose();
-    super.dispose();
-  }
 }
 
-// Frosted glass effect input
-class _FrostedInput extends StatelessWidget {
+class _AuthField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
-  final IconData prefixIcon;
-  final String? Function(String?) validator;
   final bool obscureText;
-  final Widget? suffix;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final Widget? suffixIcon;
 
-  const _FrostedInput({
+  const _AuthField({
     required this.controller,
     required this.hintText,
-    required this.prefixIcon,
-    required this.validator,
     this.obscureText = false,
-    this.suffix,
+    this.keyboardType,
+    this.validator,
+    this.suffixIcon,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(color: Colors.white),
       obscureText: obscureText,
+      keyboardType: keyboardType,
       validator: validator,
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(prefixIcon, color: Colors.blue[200]),
-        suffixIcon: suffix,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.blueAccent, width: 1.3),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
-        ),
+        filled: true,
+        fillColor: Colors.black.withOpacity(0.1),
+        suffixIcon: suffixIcon,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
-}
-
-// Purple neon lines painter
-class PurpleLinesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Colors.purpleAccent, Colors.deepPurpleAccent],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
-
-    // First curve (top left to right)
-    final path1 = Path()
-      ..moveTo(-30, size.height * 0.18)
-      ..quadraticBezierTo(
-          size.width * 0.25, size.height * 0.09, size.width * 1.1, size.height * 0.22);
-
-    // Second curve (bottom left to right)
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.82)
-      ..quadraticBezierTo(
-          size.width * 0.7, size.height * 1.05, size.width, size.height * 0.75);
-
-    // Third smaller path for extra accent
-    final path3 = Path()
-      ..moveTo(size.width * 0.1, size.height * 0.5)
-      ..quadraticBezierTo(
-          size.width * 0.5, size.height * 0.35, size.width * 0.95, size.height * 0.6);
-
-    canvas.drawPath(path1, paint);
-    canvas.drawPath(path2, paint);
-
-    // Reduce width for accent
-    paint.strokeWidth = 3;
-    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawPath(path3, paint);
-  }
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

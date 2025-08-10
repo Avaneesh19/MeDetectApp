@@ -4,23 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'skin_disease_classifier.dart';
+import 'nonvisquestions.dart';
+import 'spline_bg.dart';
 
 class DiagnosisSelectionScreen extends StatefulWidget {
   const DiagnosisSelectionScreen({super.key});
 
   @override
-  State<DiagnosisSelectionScreen> createState() => _DiagnosisSelectionScreenState();
+  State createState() => _DiagnosisSelectionScreenState();
 }
 
 class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
   final classifier = SkinDiseaseClassifier();
-
   bool isLoading = false;
   String? errorText;
-  Map<String, dynamic>? result;
+  Map? result;
   File? _capturedImage;
 
-  Future<void> _startVisibleDiagnosis() async {
+  Future _startVisibleDiagnosis() async {
     final status = await Permission.camera.request();
     if (!status.isGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -28,14 +29,17 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
       );
       return;
     }
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 95);
+    final pickedFile = await ImagePicker().pickImage(
+        source: ImageSource.camera, imageQuality: 95);
     if (pickedFile == null) return;
+
     setState(() {
       isLoading = true;
       errorText = null;
       result = null;
       _capturedImage = File(pickedFile.path);
     });
+
     final apiResult = await classifier.classifyImage(_capturedImage!);
     setState(() {
       isLoading = false;
@@ -47,9 +51,10 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
     });
   }
 
-  Future<void> _startNonVisibleDiagnosis() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Non-visible diagnosis not implemented in this demo.")),
+  Future _startNonVisibleDiagnosis() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NonVisQuestionsScreen()),
     );
   }
 
@@ -59,20 +64,7 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.3, -0.8),
-                radius: 1.2,
-                colors: [
-                  Color(0xFF182757),
-                  Color(0xFF231942),
-                  Colors.black,
-                ],
-              ),
-            ),
-          ),
-          Positioned.fill(child: CustomPaint(painter: PurpleLinesPainter())),
+          const CenteredSplineBg(),
           SafeArea(
             child: Center(
               child: ClipRRect(
@@ -81,7 +73,8 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
                   filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                   child: Container(
                     margin: const EdgeInsets.all(22),
-                    padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 26),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 36, horizontal: 26),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.42),
                       borderRadius: BorderRadius.circular(32),
@@ -95,7 +88,7 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -103,9 +96,9 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
 
   Widget _buildContent(BuildContext context) {
     if (isLoading) {
-      return Column(
+      return const Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           SizedBox(height: 48),
           CircularProgressIndicator(color: Colors.blueAccent),
           SizedBox(height: 18),
@@ -124,7 +117,10 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
         children: [
           const Text(
             "Diagnosis Result",
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 24, color: Colors.white),
+            style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 24,
+                color: Colors.white),
           ),
           if (_capturedImage != null)
             Padding(
@@ -149,7 +145,8 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
           const SizedBox(height: 6),
           Text(
             "${top['recommendation'] ?? ''}",
-            style: const TextStyle(color: Colors.orangeAccent, fontSize: 14),
+            style:
+                const TextStyle(color: Colors.orangeAccent, fontSize: 14),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 18),
@@ -185,7 +182,8 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
               _capturedImage = null;
             }),
             icon: const Icon(Icons.refresh, color: Colors.white),
-            label: const Text("Try Again", style: TextStyle(color: Colors.white)),
+            label: const Text("Try Again",
+                style: TextStyle(color: Colors.white)),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.white54),
             ),
@@ -232,16 +230,6 @@ class _DiagnosisSelectionScreenState extends State<DiagnosisSelectionScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        Text(
-          "Choose whether your symptoms are visible or non-visible.",
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-          ),
-          textAlign: TextAlign.center,
-        ),
       ],
     );
   }
@@ -252,6 +240,7 @@ class _GlassDiagnosisOption extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final LinearGradient gradient;
+
   const _GlassDiagnosisOption({
     required this.label,
     required this.icon,
@@ -275,7 +264,6 @@ class _GlassDiagnosisOption extends StatelessWidget {
             BoxShadow(
               color: Colors.purpleAccent.withOpacity(0.13),
               blurRadius: 10,
-              spreadRadius: 0,
             ),
           ],
         ),
@@ -305,33 +293,4 @@ class _GlassDiagnosisOption extends StatelessWidget {
       ),
     );
   }
-}
-
-class PurpleLinesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Colors.purpleAccent, Colors.deepPurpleAccent],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    final path1 = Path()
-      ..moveTo(-30, size.height * 0.15)
-      ..quadraticBezierTo(size.width * 0.2, 0, size.width * 1.1, size.height * 0.19);
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.91)
-      ..quadraticBezierTo(size.width * 0.62, size.height, size.width, size.height * 0.81);
-    canvas.drawPath(path1, paint);
-    canvas.drawPath(path2, paint);
-    paint.strokeWidth = 2;
-    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-    final path3 = Path()
-      ..moveTo(size.width * 0.13, size.height * 0.46)
-      ..quadraticBezierTo(size.width * 0.53, size.height * 0.31, size.width * 0.92, size.height * 0.6);
-    canvas.drawPath(path3, paint);
-  }
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

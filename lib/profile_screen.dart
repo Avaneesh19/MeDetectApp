@@ -1,7 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-
-// ... (any other imports)
+import 'dart:ui';
+import 'spline_bg.dart'; // Import the spline background widget
+import 'analytics_screen.dart'; // Import your full analytics screen implementation
 
 class ProfileScreen extends StatelessWidget {
   final String userName;
@@ -26,17 +26,7 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Neon BG
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF231942), Color(0xFF2e294e), Colors.black],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          Positioned.fill(child: CustomPaint(painter: PurpleLinesPainter())),
+          const CenteredSplineBg(), // Centered spline background with blur
           SafeArea(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
@@ -100,22 +90,37 @@ class ProfileScreen extends StatelessWidget {
                 Center(
                   child: Text(
                     userEmail,
-                    style: TextStyle(
-                        color: Colors.grey[400], fontSize: 14),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
                   ),
                 ),
                 const SizedBox(height: 36),
                 ListTile(
                   leading: Icon(Icons.history, color: Colors.blue.shade300),
                   title: const Text('Records History',
-                      style:
-                          TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              const RecordsHistoryScreen()),
+                        builder: (context) => const RecordsHistoryScreen(),
+                      ),
+                    );
+                  },
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  tileColor: Colors.white.withOpacity(0.04),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  leading: Icon(Icons.analytics, color: Colors.blue.shade300),
+                  title: const Text('Analytics',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AnalyticsScreen(),
+                      ),
                     );
                   },
                   shape: RoundedRectangleBorder(
@@ -140,16 +145,7 @@ class RecordsHistoryScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF231942), Color(0xFF2e294e), Colors.black],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          Positioned.fill(child: CustomPaint(painter: PurpleLinesPainter())),
+          const CenteredSplineBg(), // Use spline model background here as well
           SafeArea(
             child: Center(
               child: ListTile(
@@ -163,40 +159,4 @@ class RecordsHistoryScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-// ---- Purple Neon Lines Painter ----
-class PurpleLinesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Colors.purpleAccent, Colors.deepPurpleAccent],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
-
-    final path1 = Path()
-      ..moveTo(-30, size.height * 0.12)
-      ..quadraticBezierTo(size.width * 0.2, 0, size.width * 1.1, size.height * 0.22);
-
-    final path2 = Path()
-      ..moveTo(0, size.height * 0.95)
-      ..quadraticBezierTo(size.width * 0.6, size.height, size.width, size.height * 0.85);
-
-    final path3 = Path()
-      ..moveTo(size.width * 0.12, size.height * 0.5)
-      ..quadraticBezierTo(size.width * 0.6, size.height * 0.35, size.width * 0.96, size.height * 0.6);
-
-    canvas.drawPath(path1, paint);
-    canvas.drawPath(path2, paint);
-
-    paint.strokeWidth = 3;
-    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawPath(path3, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

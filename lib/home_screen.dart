@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:medetect/authscreen.dart';
 import 'package:medetect/profile_screen.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'chatbot_screen.dart';
-import 'splash_wrapper.dart';
+
 import 'diagnosis_selection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -99,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
       )
       ..loadRequest(
         Uri.parse(
-          'https://my.spline.design/aibrain-jwu6TAdZlFke3PogYM4yDqbd/',
+          'https://my.spline.design/particlenebula-Lhnk9Kvv9ioPiRHGvmCTlGEa/',
         ),
         headers: {
           'User-Agent':
@@ -180,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context) => ChatScreen(
                   onNavigateToAuth: () {
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => SplashWrapper()),
+                      MaterialPageRoute(builder: (context) => AuthScreen(onLoginSuccess: (String name, String email) {  },)),
                       (route) => false,
                     );
                   },
